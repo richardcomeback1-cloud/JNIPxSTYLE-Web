@@ -45,18 +45,23 @@ export default function AdminPage() {
     }
   }, [user, profile, authLoading]);
 
-  // Initial load: only dashboard data (products + orders for stats)
+  // Initial load: dashboard data (products + orders for stats) + categories
+  // (categories ต้องโหลดมาตั้งแต่แรก เพราะฟอร์มเพิ่ม/แก้สินค้าในแท็บ "สินค้า"
+  //  ใช้ dropdown เลือกหมวดหมู่ — ถ้ารอให้โหลดตอนกดแท็บ "หมวดหมู่" เท่านั้น
+  //  แอดมินที่ยังไม่เคยกดแท็บนั้นจะเจอ dropdown ว่างเปล่า เลือกหมวดหมู่ไม่ได้)
   useEffect(() => {
     if (!user || !profile?.is_admin) return;
     (async () => {
-      const [prods, ords] = await Promise.all([
+      const [prods, ords, cats] = await Promise.all([
         supabase.from('products').select('*').order('created_at', { ascending: false }),
         supabase.from('orders').select('*').order('created_at', { ascending: false }),
+        supabase.from('categories').select('*').order('sort_order'),
       ]);
       setProducts((prods.data as Product[]) || []);
       setOrders((ords.data as Order[]) || []);
+      setCategories((cats.data as Category[]) || []);
       setLoading(false);
-      setLoadedTabs(new Set(['dashboard', 'products']));
+      setLoadedTabs(new Set(['dashboard', 'products', 'categories']));
     })();
   }, [user, profile?.is_admin]);
 
@@ -65,10 +70,7 @@ export default function AdminPage() {
     if (!user || !profile?.is_admin || loadedTabs.has(tab)) return;
     setTabLoading(true);
     (async () => {
-      if (tab === 'categories') {
-        const { data } = await supabase.from('categories').select('*').order('sort_order');
-        setCategories((data as Category[]) || []);
-      } else if (tab === 'messages') {
+      if (tab === 'messages') {
         const { data } = await supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(50);
         setMessages((data as ContactMessage[]) || []);
       }
