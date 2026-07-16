@@ -248,6 +248,15 @@ export default function ProductFormModal({ product, categories, onClose, onSave 
     }));
   };
 
+  // ปุ่ม "ทั้งหมด" — ถ้าเลือกครบทุกประเภทของหมวดนี้อยู่แล้วให้ล้างทั้งหมด ไม่งั้นเลือกให้ครบทุกประเภท
+  const allTypesSelected = subCategories.length > 0 && subCategories.every((c) => form.category_ids.includes(c.id));
+  const toggleAllTypes = () => {
+    setForm((f) => ({
+      ...f,
+      category_ids: allTypesSelected ? [] : subCategories.map((c) => c.id),
+    }));
+  };
+
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
@@ -357,6 +366,14 @@ export default function ProductFormModal({ product, categories, onClose, onSave 
                 <p className="text-sm text-taupe-300 py-2.5">ไม่มีประเภทย่อย</p>
               ) : (
                 <div className="flex flex-wrap gap-2 py-1">
+                  <label
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors ${
+                      allTypesSelected ? 'bg-taupe-500 text-white border-taupe-500' : 'bg-white text-taupe-500 border-rose-200 hover:border-rose-400'
+                    }`}
+                  >
+                    <input type="checkbox" checked={allTypesSelected} onChange={toggleAllTypes} className="hidden" />
+                    ทั้งหมด
+                  </label>
                   {subCategories.map((c) => {
                     const checked = form.category_ids.includes(c.id);
                     return (
