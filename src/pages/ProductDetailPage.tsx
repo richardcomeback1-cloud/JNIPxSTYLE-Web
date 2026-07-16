@@ -8,6 +8,70 @@ import { navigate } from '../lib/router';
 import ProductCard from '../components/ProductCard';
 import OptimizedImage from '../components/OptimizedImage';
 
+type ParsedSizeChart = { type?: string; headers: string[]; rows: string[][] };
+
+// The `size_chart` column stores either a JSON string like
+// {"type":"skirt","headers":[...],"rows":[[...]]}, a plain image URL,
+// or a plain text note. This tries JSON first so we can render a real
+// table; otherwise the caller falls back to an image or plain text.
+function parseSizeChart(raw: string | null | undefined): ParsedSizeChart | null {
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw);
+    if (data && Array.isArray(data.headers) && Array.isArray(data.rows)) {
+      return data as ParsedSizeChart;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function SizeChartTable({ data }: { data: ParsedSizeChart }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="bg-rose-50">
+            {data.headers.map((header, i) => (
+              <th
+                key={i}
+                className="border border-rose-100 px-3 py-2 text-taupe-600 font-semibold text-center whitespace-nowrap"
+              >
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.rows.map((row, ri) => (
+            <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-rose-50/40'}>
+              {row.map((cell, ci) => (
+                <td key={ci} className="border border-rose-100 px-3 py-2 text-taupe-500 text-center whitespace-nowrap">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Renders whatever is stored in `size_chart`: a parsed table when it's
+// the structured JSON format, an <img> when it's a URL, plain text
+// otherwise, or a fallback message when there's nothing stored.
+function SizeChartContent({ sizeChart }: { sizeChart: string | null | undefined }) {
+  const data = parseSizeChart(sizeChart);
+  if (data) return <SizeChartTable data={data} />;
+  if (!sizeChart) return <p className="text-taupe-500">ไม่มีข้อมูลตารางไซส์</p>;
+  if (/^https?:\/\//.test(sizeChart.trim())) {
+    return <img src={sizeChart} alt="ตารางไซส์" className="max-w-full rounded-lg border border-rose-100" />;
+  }
+  return <p className="text-taupe-500 whitespace-pre-line">{sizeChart}</p>;
+}
+
 export default function ProductDetailPage({ slug }: { slug: string }) {
   const { addToCart } = useCart();
   const { user } = useAuth();
@@ -433,7 +497,7 @@ export default function ProductDetailPage({ slug }: { slug: string }) {
           {activeTab === 'size' && (
             <div>
               <h3 className="font-prompt text-lg font-bold text-taupe-600 mb-3">ตารางไซส์</h3>
-              <p className="text-taupe-500 whitespace-pre-line">{product.size_chart || 'ไม่มีข้อมูลตารางไซส์'}</p>
+              <SizeChartContent sizeChart={product.size_chart} />
             </div>
           )}
           {activeTab === 'care' && (
@@ -494,7 +558,9 @@ export default function ProductDetailPage({ slug }: { slug: string }) {
         <div className="fixed inset-0 bg-taupe-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowSizeGuide(false)}>
           <div className="bg-cream rounded-2xl max-w-lg w-full p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-prompt text-xl font-bold text-taupe-600 mb-4">ไซส์ไกด์</h3>
-            <p className="text-taupe-500 whitespace-pre-line text-sm mb-4">{product.size_chart || 'ไม่มีข้อมูล'}</p>
+            <div className="mb-4">
+              <SizeChartContent sizeChart={product.size_chart} />
+            </div>
             <button onClick={() => setShowSizeGuide(false)} className="w-full py-3 bg-rose-500 text-white rounded-full text-sm font-medium hover:bg-rose-600 transition-colors">
               ปิด
             </button>
