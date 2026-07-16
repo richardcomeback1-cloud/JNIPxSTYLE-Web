@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { X, Upload, Plus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Product, Category } from '../../types';
@@ -221,6 +221,35 @@ export default function ProductFormModal({ product, categories, onClose, onSave 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
 
+  // หมวดหมู่หลัก (ไม่มี parent) กับหมวดหมู่ย่อย/ประเภท (มี parent_id) —
+  // ตาราง categories รองรับ 2 ระดับอยู่แล้ว (ดู AdminCategories) แต่เดิมฟอร์มสินค้า
+  // มีแค่ dropdown เดียวแสดงทุกหมวดรวมกันแบน ๆ เลยไม่มีที่ให้เลือก "ประเภท" แยก
+  const rootCategories = useMemo(() => categories.filter((c) => !c.parent_id), [categories]);
+
+  // หา root ที่ควรถูกเลือกไว้ตอนเปิดฟอร์ม: ถ้าสินค้าถูกผูกกับหมวดย่อยอยู่แล้ว
+  // ให้ดึง parent ของหมวดย่อยนั้นมาเป็นค่าเริ่มต้นของ dropdown หมวดหมู่หลัก
+  const [selectedRootId, setSelectedRootId] = useState(() => {
+    const current = categories.find((c) => c.id === product?.category_id);
+    if (current?.parent_id) return current.parent_id;
+    return product?.category_id || '';
+  });
+
+  const subCategories = useMemo(
+    () => categories.filter((c) => c.parent_id === selectedRootId),
+    [categories, selectedRootId]
+  );
+
+  const handleRootCategoryChange = (rootId: string) => {
+    setSelectedRootId(rootId);
+    // เปลี่ยนหมวดหมู่หลัก = รีเซ็ตประเภทย่อยที่เคยเลือกไว้ (อาจไม่มีอยู่ในหมวดใหม่)
+    setForm((f) => ({ ...f, category_id: rootId }));
+  };
+
+  const handleSubCategoryChange = (subId: string) => {
+    // ถ้าเลือก "ไม่ระบุประเภท" ให้กลับไปใช้หมวดหมู่หลักตรง ๆ
+    setForm((f) => ({ ...f, category_id: subId || selectedRootId }));
+  };
+
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
@@ -312,12 +341,28 @@ export default function ProductFormModal({ product, categories, onClose, onSave 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>หมวดหมู่</label>
-              <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={inputClass}>
+              <select value={selectedRootId} onChange={(e) => handleRootCategoryChange(e.target.value)} className={inputClass}>
                 <option value="">เลือกหมวดหมู่</option>
-                {categories.map((c) => (
+                {rootCategories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>ประเภท</label>
+              <select
+                value={form.category_id !== selectedRootId ? form.category_id : ''}
+                onChange={(e) => handleSubCategoryChange(e.target.value)}
+                disabled={!selectedRootId || subCategories.length === 0}
+                className={`${inputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <option value="">
+                  {!selectedRootId ? 'เลือกหมวดหมู่ก่อน' : subCategories.length === 0 ? 'ไม่มีประเภทย่อย' : 'ไม่ระบุประเภท'}
+                </option>
+                {subCategories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
