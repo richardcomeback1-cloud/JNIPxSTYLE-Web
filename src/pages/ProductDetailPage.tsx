@@ -10,6 +10,17 @@ import OptimizedImage from '../components/OptimizedImage';
 
 type ParsedSizeChart = { type?: string; headers: string[]; rows: string[][] };
 
+// Descriptions now run long (intro paragraph + bullet list of features).
+// The summary shown near the price should only be the short intro
+// paragraph, not the whole thing — the full text already has its own
+// tab below. Falls back to a hard character cut if there's no blank
+// line to split on (e.g. legacy single-paragraph descriptions).
+function getDescriptionSummary(description: string, maxLen = 160): string {
+  const firstParagraph = description.split(/\n\s*\n/)[0]?.trim() ?? description.trim();
+  if (firstParagraph.length <= maxLen) return firstParagraph;
+  return `${firstParagraph.slice(0, maxLen).trimEnd()}…`;
+}
+
 // The `size_chart` column stores either a JSON string like
 // {"type":"skirt","headers":[...],"rows":[[...]]}, a plain image URL,
 // or a plain text note. This tries JSON first so we can render a real
@@ -329,7 +340,21 @@ export default function ProductDetailPage({ slug }: { slug: string }) {
             )}
           </div>
 
-          <p className="text-taupe-400 text-sm leading-relaxed mb-6">{product.description}</p>
+          <p className="text-taupe-400 text-sm leading-relaxed mb-6">
+            {getDescriptionSummary(product.description)}{' '}
+            {product.description.length > 160 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('description');
+                  document.getElementById('product-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="text-rose-500 hover:underline font-medium whitespace-nowrap"
+              >
+                ดูรายละเอียดเพิ่มเติม
+              </button>
+            )}
+          </p>
 
           {/* Size */}
           {product.sizes.length > 0 && (
@@ -468,7 +493,7 @@ export default function ProductDetailPage({ slug }: { slug: string }) {
       </div>
 
       {/* Tabs */}
-      <div className="mt-12">
+      <div id="product-tabs" className="mt-12 scroll-mt-24">
         <div className="flex gap-6 border-b border-rose-100 mb-6 overflow-x-auto no-scrollbar">
           {[
             { key: 'description', label: 'รายละเอียดสินค้า' },
