@@ -10,6 +10,161 @@ interface Props {
   onSave: (data: Record<string, unknown>) => void;
 }
 
+type SizeChartData = { type: string; headers: string[]; rows: string[][] };
+
+// Accepts whatever is currently stored in `size_chart` (structured JSON
+// from this editor, or a legacy URL / plain-text value from before) and
+// normalizes it into an editable table shape. Legacy non-JSON values
+// start the admin off with a blank single-row table rather than crashing.
+function parseSizeChartInput(raw: string): SizeChartData {
+  const blank: SizeChartData = { type: '', headers: ['ไซส์'], rows: [['']] };
+  if (!raw) return blank;
+  try {
+    const data = JSON.parse(raw);
+    if (data && Array.isArray(data.headers) && data.headers.length > 0 && Array.isArray(data.rows)) {
+      const headers: string[] = data.headers.map((h: unknown) => String(h ?? ''));
+      const rows: string[][] = data.rows.map((row: unknown) => {
+        const cells = Array.isArray(row) ? row.map((c) => String(c ?? '')) : [];
+        while (cells.length < headers.length) cells.push('');
+        return cells.slice(0, headers.length);
+      });
+      return {
+        type: typeof data.type === 'string' ? data.type : '',
+        headers,
+        rows: rows.length > 0 ? rows : [headers.map(() => '')],
+      };
+    }
+  } catch {
+    // Not JSON (e.g. an old image URL or free text) — start a fresh table.
+  }
+  return blank;
+}
+
+function SizeChartEditor({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+  const [data, setData] = useState<SizeChartData>(() => parseSizeChartInput(value));
+
+  const commit = (next: SizeChartData) => {
+    setData(next);
+    onChange(JSON.stringify(next));
+  };
+
+  const updateType = (type: string) => commit({ ...data, type });
+
+  const updateHeader = (i: number, text: string) => {
+    const headers = [...data.headers];
+    headers[i] = text;
+    commit({ ...data, headers });
+  };
+
+  const updateCell = (ri: number, ci: number, text: string) => {
+    const rows = data.rows.map((row) => [...row]);
+    rows[ri][ci] = text;
+    commit({ ...data, rows });
+  };
+
+  const addColumn = () => {
+    const headers = [...data.headers, ''];
+    const rows = data.rows.map((row) => [...row, '']);
+    commit({ ...data, headers, rows });
+  };
+
+  const removeColumn = (i: number) => {
+    if (data.headers.length <= 1) return;
+    const headers = data.headers.filter((_, idx) => idx !== i);
+    const rows = data.rows.map((row) => row.filter((_, idx) => idx !== i));
+    commit({ ...data, headers, rows });
+  };
+
+  const addRow = () => commit({ ...data, rows: [...data.rows, data.headers.map(() => '')] });
+
+  const removeRow = (ri: number) => {
+    if (data.rows.length <= 1) return;
+    commit({ ...data, rows: data.rows.filter((_, idx) => idx !== ri) });
+  };
+
+  return (
+    <div className="space-y-3">
+      <input
+        type="text"
+        value={data.type}
+        onChange={(e) => updateType(e.target.value)}
+        placeholder="ประเภทตาราง เช่น skirt, pants, shirt (ใช้ภายในระบบ ลูกค้าไม่เห็น)"
+        className="w-full px-3 py-2 border border-rose-200 rounded-lg bg-white text-taupe-500 text-sm focus:outline-none focus:border-rose-400"
+      />
+
+      <div className="overflow-x-auto border border-rose-200 rounded-lg">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-rose-50">
+              {data.headers.map((header, i) => (
+                <th key={i} className="border border-rose-100 p-1">
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="text"
+                      value={header}
+                      onChange={(e) => updateHeader(i, e.target.value)}
+                      placeholder={`หัวข้อ ${i + 1}`}
+                      className="w-full min-w-[64px] px-2 py-1 bg-transparent text-taupe-600 font-semibold text-center focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeColumn(i)}
+                      disabled={data.headers.length <= 1}
+                      className="shrink-0 text-rose-400 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </th>
+              ))}
+              <th className="border border-rose-100 p-1 w-10">
+                <button type="button" onClick={addColumn} className="p-1 text-taupe-400 hover:text-rose-500" title="เพิ่มคอลัมน์">
+                  <Plus className="w-4 h-4" />
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.map((row, ri) => (
+              <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-rose-50/40'}>
+                {row.map((cell, ci) => (
+                  <td key={ci} className="border border-rose-100 p-1">
+                    <input
+                      type="text"
+                      value={cell}
+                      onChange={(e) => updateCell(ri, ci, e.target.value)}
+                      className="w-full min-w-[64px] px-2 py-1 bg-transparent text-taupe-500 text-center focus:outline-none"
+                    />
+                  </td>
+                ))}
+                <td className="border border-rose-100 p-1 text-center">
+                  <button
+                    type="button"
+                    onClick={() => removeRow(ri)}
+                    disabled={data.rows.length <= 1}
+                    className="p-1 text-rose-400 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="ลบแถวนี้"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <button
+        type="button"
+        onClick={addRow}
+        className="px-4 py-2 bg-cream border border-rose-200 rounded-lg text-sm text-taupe-500 hover:bg-rose-50 transition-colors flex items-center gap-1"
+      >
+        <Plus className="w-4 h-4" /> เพิ่มแถว
+      </button>
+    </div>
+  );
+}
+
 export default function ProductFormModal({ product, categories, onClose, onSave }: Props) {
   const [form, setForm] = useState({
     name: product?.name || '',
@@ -247,8 +402,8 @@ export default function ProductFormModal({ product, categories, onClose, onSave 
           </div>
 
           <div>
-            <label className={labelClass}>ตารางไซส์ (URL รูป)</label>
-            <input type="text" value={form.size_chart} onChange={(e) => setForm({ ...form, size_chart: e.target.value })} placeholder="https://..." className={inputClass} />
+            <label className={labelClass}>ตารางไซส์</label>
+            <SizeChartEditor value={form.size_chart} onChange={(v) => setForm((f) => ({ ...f, size_chart: v }))} />
           </div>
 
           <div className="flex gap-4 flex-wrap">
