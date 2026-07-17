@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { X, Upload, Plus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { compressImage } from '../../lib/imageUpload';
 import type { Product, Category } from '../../types';
 import OptimizedImage from '../OptimizedImage';
 
@@ -11,36 +12,6 @@ interface Props {
   onSave: (data: Record<string, unknown>) => void;
 }
 
-// ย่อขนาด + บีบอัดรูปสินค้าฝั่ง browser ก่อนอัปโหลดขึ้น Supabase Storage
-// รูปที่แอดมินอัปโหลด (มักตรงจากกล้อง/มือถือ ขนาด 3-8 MB) จะถูกลดเหลือ
-// ไม่เกิน 1600px ด้านยาว และบีบเป็น JPEG คุณภาพ ~82% (ปกติเหลือไม่ถึง 300 KB)
-// ทำให้หน้าร้านที่แสดงรูปสินค้าจำนวนมากพร้อมกันโหลด/ถอดรหัสไวขึ้นมาก
-async function compressImage(file: File, maxDimension = 1600, quality = 0.82): Promise<Blob> {
-  // ไม่ใช่ไฟล์รูป (เช่น .gif หรือไฟล์แปลก ๆ) ก็อัปโหลดตามเดิม ไม่ต้องเสี่ยงแปลง
-  if (!file.type.startsWith('image/')) return file;
-
-  const bitmap = await createImageBitmap(file).catch(() => null);
-  if (!bitmap) return file;
-
-  const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return file;
-  ctx.drawImage(bitmap, 0, 0, width, height);
-
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, 'image/jpeg', quality)
-  );
-
-  // ถ้าบีบอัดแล้วไฟล์กลับใหญ่กว่าเดิม (ไฟล์ต้นฉบับเล็กอยู่แล้ว) ใช้ไฟล์เดิมดีกว่า
-  if (!blob || blob.size >= file.size) return file;
-  return blob;
-}
 
 type SizeChartData = { type: string; headers: string[]; rows: string[][] };
 

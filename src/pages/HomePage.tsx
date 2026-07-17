@@ -7,30 +7,7 @@ import { navigate } from '../lib/router';
 import { SHORTCUT_CATEGORIES } from '../lib/categories';
 import OptimizedImage from '../components/OptimizedImage';
 import CategoryShowcaseCard from '../components/CategoryShowcaseCard';
-
-const heroSlides = [
-  {
-    title: 'แต่งเต็มทุกช่วงวัยการเรียน',
-    subtitle: 'ชุดนักเรียน-นักศึกษาคุณภาพดี ในราคาที่คุณสัมผัสได้',
-    cta: 'ช้อปเลย',
-    link: '/shop',
-    image: 'https://static.vecteezy.com/system/resources/previews/073/752/744/large_2x/white-dress-shirt-hanging-on-wooden-hanger-against-plain-background-free-photo.jpg',
-  },
-  {
-    title: 'DEFINE YOUR STYLE',
-    subtitle: 'สินค้ามาใหม่ คอลเลกชั่นปีการศึกษาใหม่ พร้อมส่วนลดพิเศษ',
-    cta: 'ดูสินค้ามาใหม่',
-    link: '/shop?filter=new',
-    image: 'https://static.vecteezy.com/system/resources/previews/073/349/438/non_2x/elegant-white-dress-shirt-hanging-in-a-modern-minimalist-wardrobe-free-photo.jpg',
-  },
-  {
-    title: 'SALE สิ้นฤดูู',
-    subtitle: 'ลดราคาสูงสุด 50% สินค้าคุณภาพ หมดปัญหาเรื่องชุด',
-    cta: 'ช้อปสินค้าลดราคา',
-    link: '/category/on-sale',
-    image: 'https://static.vecteezy.com/system/resources/previews/072/114/380/non_2x/colorful-men-s-shirts-hanging-on-wooden-hangers-in-a-wardrobe-free-photo.jpeg',
-  },
-];
+import { fetchSiteSettings, DEFAULT_HERO_SLIDES, DEFAULT_PROMO_BANNER, type HeroSlide, type PromoBanner } from '../lib/siteSettings';
 
 const trustItems = [
   { icon: Truck, title: 'จัดส่งฟรี', desc: 'สั่งซื้อ ฿500 ขึ้นไป' },
@@ -56,6 +33,9 @@ export default function HomePage() {
   const [saleProducts, setSaleProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryImages, setCategoryImages] = useState<Record<string, string[]>>({});
+  const [categoryCovers, setCategoryCovers] = useState<Record<string, string>>({});
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(DEFAULT_HERO_SLIDES);
+  const [promoBanner, setPromoBanner] = useState<PromoBanner>(DEFAULT_PROMO_BANNER);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,21 +47,25 @@ export default function HomePage() {
       setSlide((s) => (s + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [heroSlides.length]);
 
   useEffect(() => {
     (async () => {
-      const [best, latest, sale, cats, catProducts] = await Promise.all([
+      const [best, latest, sale, cats, catProducts, settings] = await Promise.all([
         supabase.from('products').select('*').order('sold_count', { ascending: false }).limit(8),
         supabase.from('products').select('*').eq('is_new', true).order('created_at', { ascending: false }).limit(8),
         supabase.from('products').select('*').eq('is_sale', true).limit(4),
         supabase.from('categories').select('*').order('sort_order'),
         supabase.from('products').select('category_id, images').order('created_at', { ascending: false }).limit(120),
+        fetchSiteSettings(),
       ]);
       setBestSellers((best.data as Product[]) || []);
       setNewArrivals((latest.data as Product[]) || []);
       setSaleProducts((sale.data as Product[]) || []);
       setCategories((cats.data as Category[]) || []);
+      setHeroSlides(settings.heroSlides);
+      setPromoBanner(settings.promoBanner);
+      setCategoryCovers(settings.categoryCovers);
 
       // จัดกลุ่มรูปสินค้าจริงตามหมวดหมู่หลัก (category_id) เอาไว้เลื่อนโชว์ในการ์ดหมวดหมู่
       const imagesByCategory: Record<string, string[]> = {};
@@ -202,7 +186,7 @@ export default function HomePage() {
               <CategoryShowcaseCard
                 key={cat.id}
                 category={cat}
-                images={categoryImages[cat.id] || []}
+                images={categoryCovers[cat.slug] ? [categoryCovers[cat.slug]] : categoryImages[cat.id] || []}
                 fallbackImage={
                   categoryIcons[cat.slug] || cat.image_url || 'https://images.pexels.com/photos/8617715/pexels-photo-8617715.jpeg'
                 }
@@ -253,22 +237,22 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 cv-auto">
         <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-rose-200 via-accent to-rose-100 p-8 lg:p-16">
           <div className="relative z-10 max-w-lg">
-            <p className="text-rose-600 text-sm tracking-[0.3em] uppercase mb-3">โปรโมชั่นพิเศษ</p>
+            <p className="text-rose-600 text-sm tracking-[0.3em] uppercase mb-3">{promoBanner.eyebrow}</p>
             <h2 className="font-prompt text-3xl lg:text-5xl font-bold text-taupe-600 mb-4">
-              ส่วนลด 15% สำหรับนักเรียนใหม่
+              {promoBanner.title}
             </h2>
             <p className="text-taupe-400 mb-6 text-lg">
-              ใส่โค้ด <span className="font-bold text-rose-500 bg-white/50 px-2 py-0.5 rounded">NEWSTUDENT</span> ตอนชำระเงิน มีขั้นต่ำ ฿400
+              ใส่โค้ด <span className="font-bold text-rose-500 bg-white/50 px-2 py-0.5 rounded">{promoBanner.code}</span> ตอนชำระเงิน มีขั้นต่ำ ฿{promoBanner.minOrder.toLocaleString()}
             </p>
             <button
-              onClick={() => navigate('/shop')}
+              onClick={() => navigate(promoBanner.link)}
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-taupe-500 text-white rounded-full font-medium hover:bg-taupe-600 transition-all hover:shadow-lg"
             >
-              ช้อปเลย <ArrowRight className="w-4 h-4" />
+              {promoBanner.ctaLabel} <ArrowRight className="w-4 h-4" />
             </button>
           </div>
           <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-30 hidden lg:block">
-            <OptimizedImage src="https://images.pexels.com/photos/8617718/pexels-photo-8617718.jpeg" alt="" width={900} className="w-full h-full object-cover" />
+            <OptimizedImage src={promoBanner.image} alt="" width={900} className="w-full h-full object-cover" />
           </div>
         </div>
       </section>

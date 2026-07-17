@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { useRouter, matchRoute } from './lib/router';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
@@ -83,7 +84,9 @@ export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <Routes />
+        <ToastProvider>
+          <Routes />
+        </ToastProvider>
       </CartProvider>
     </AuthProvider>
   );

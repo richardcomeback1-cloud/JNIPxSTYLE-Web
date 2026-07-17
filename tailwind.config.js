@@ -40,6 +40,7 @@ export default {
         'fade-in': 'fadeIn 0.6s ease-out',
         'fade-up': 'fadeUp 0.7s ease-out',
         'slide-in': 'slideIn 0.4s ease-out',
+        'slide-in-left': 'slideInLeft 0.3s ease-out',
         'scale-in': 'scaleIn 0.3s ease-out',
         'shimmer': 'shimmer 1.5s infinite',
       },
@@ -54,6 +55,10 @@ export default {
         },
         slideIn: {
           '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        slideInLeft: {
+          '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(0)' },
         },
         scaleIn: {

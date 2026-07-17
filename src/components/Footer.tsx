@@ -1,10 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Phone, Mail, Facebook, Instagram, Send, MapPin } from 'lucide-react';
 import { navigate } from '../lib/router';
+import { fetchSiteSettings, DEFAULT_STORE_INFO, type StoreInfo } from '../lib/siteSettings';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [storeInfo, setStoreInfo] = useState<StoreInfo>(DEFAULT_STORE_INFO);
+
+  useEffect(() => {
+    fetchSiteSettings().then((s) => setStoreInfo(s.storeInfo));
+  }, []);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,13 +37,13 @@ export default function Footer() {
               ชุดนักเรียน-นักศึกษาและอุปกรณ์ที่เกี่ยวข้อง คุณภาพดี ราคาเหมาะสม ตอบโจทย์นักเรียนนักศึกษาทุกระดับชั้น
             </p>
             <div className="flex gap-3">
-              <a href="#" className="w-9 h-9 rounded-full bg-cream/10 hover:bg-rose-500 flex items-center justify-center transition-colors" aria-label="Facebook">
+              <a href={storeInfo.facebook || '#'} target={storeInfo.facebook ? '_blank' : undefined} rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-cream/10 hover:bg-rose-500 flex items-center justify-center transition-colors" aria-label="Facebook">
                 <Facebook className="w-4 h-4" />
               </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-cream/10 hover:bg-rose-500 flex items-center justify-center transition-colors" aria-label="Instagram">
+              <a href={storeInfo.instagram || '#'} target={storeInfo.instagram ? '_blank' : undefined} rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-cream/10 hover:bg-rose-500 flex items-center justify-center transition-colors" aria-label="Instagram">
                 <Instagram className="w-4 h-4" />
               </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-cream/10 hover:bg-rose-500 flex items-center justify-center transition-colors" aria-label="LINE">
+              <a href={storeInfo.line || '#'} target={storeInfo.line ? '_blank' : undefined} rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-cream/10 hover:bg-rose-500 flex items-center justify-center transition-colors" aria-label="LINE">
                 <Send className="w-4 h-4" />
               </a>
             </div>
@@ -63,20 +69,22 @@ export default function Footer() {
             <ul className="space-y-3 text-sm text-cream/70">
               <li className="flex items-start gap-2">
                 <Phone className="w-4 h-4 mt-0.5 text-rose-300 shrink-0" />
-                <span>02-123-4567, 081-234-5678</span>
+                <span>{storeInfo.phone}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="w-4 h-4 mt-0.5 text-rose-300 shrink-0" />
-                <span>support@jnipxstyle.com</span>
+                <span>{storeInfo.email}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Send className="w-4 h-4 mt-0.5 text-rose-300 shrink-0" />
                 <span>LINE OA: @jnipxstyle</span>
               </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 mt-0.5 text-rose-300 shrink-0" />
-                <span>123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110</span>
-              </li>
+              {storeInfo.address && (
+                <li className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 mt-0.5 text-rose-300 shrink-0" />
+                  <span>{storeInfo.address}</span>
+                </li>
+              )}
             </ul>
             <div className="mt-4">
               <p className="text-xs text-cream/50 mb-2">เวลาทำการ: จันทร์-เสาร์ 9:00-19:00 น.</p>
