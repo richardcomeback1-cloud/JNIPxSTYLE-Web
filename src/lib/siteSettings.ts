@@ -50,7 +50,7 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
       'https://static.vecteezy.com/system/resources/previews/073/349/438/non_2x/elegant-white-dress-shirt-hanging-in-a-modern-minimalist-wardrobe-free-photo.jpg',
   },
   {
-    title: 'SALE สิ้นฤดูู',
+    title: 'SALE สิ้นฤดู',
     subtitle: 'ลดราคาสูงสุด 50% สินค้าคุณภาพ หมดปัญหาเรื่องชุด',
     cta: 'ช้อปสินค้าลดราคา',
     link: '/category/on-sale',
