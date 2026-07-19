@@ -54,7 +54,7 @@ insert into public.site_settings (key, value) values
 ('hero_slides', '[
   {"title":"แต่งเต็มทุกช่วงวัยการเรียน","subtitle":"ชุดนักเรียน-นักศึกษาคุณภาพดี ในราคาที่คุณสัมผัสได้","cta":"ช้อปเลย","link":"/shop","image":"https://static.vecteezy.com/system/resources/previews/073/752/744/large_2x/white-dress-shirt-hanging-on-wooden-hanger-against-plain-background-free-photo.jpg"},
   {"title":"DEFINE YOUR STYLE","subtitle":"สินค้ามาใหม่ คอลเลกชั่นปีการศึกษาใหม่ พร้อมส่วนลดพิเศษ","cta":"ดูสินค้ามาใหม่","link":"/shop?filter=new","image":"https://static.vecteezy.com/system/resources/previews/073/349/438/non_2x/elegant-white-dress-shirt-hanging-in-a-modern-minimalist-wardrobe-free-photo.jpg"},
-  {"title":"SALE สิ้นฤดูู","subtitle":"ลดราคาสูงสุด 50% สินค้าคุณภาพ หมดปัญหาเรื่องชุด","cta":"ช้อปสินค้าลดราคา","link":"/category/on-sale","image":"https://static.vecteezy.com/system/resources/previews/072/114/380/non_2x/colorful-men-s-shirts-hanging-on-wooden-hangers-in-a-wardrobe-free-photo.jpeg"}
+  {"title":"SALE สิ้นฤดู","subtitle":"ลดราคาสูงสุด 50% สินค้าคุณภาพ หมดปัญหาเรื่องชุด","cta":"ช้อปสินค้าลดราคา","link":"/category/on-sale","image":"https://static.vecteezy.com/system/resources/previews/072/114/380/non_2x/colorful-men-s-shirts-hanging-on-wooden-hangers-in-a-wardrobe-free-photo.jpeg"}
 ]'::jsonb),
 ('promo_banner', '{"eyebrow":"โปรโมชั่นพิเศษ","title":"ส่วนลด 15% สำหรับนักเรียนใหม่","subtitle":"ใส่โค้ด NEWSTUDENT ตอนชำระเงิน มีขั้นต่ำ ฿400","code":"NEWSTUDENT","minOrder":400,"ctaLabel":"ช้อปเลย","link":"/shop","image":"https://static.vecteezy.com/system/resources/previews/073/349/438/non_2x/elegant-white-dress-shirt-hanging-in-a-modern-minimalist-wardrobe-free-photo.jpg"}'::jsonb),
 ('category_covers', '{}'::jsonb),
